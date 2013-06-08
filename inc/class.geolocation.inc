@@ -4,7 +4,7 @@ class geolocation{
 	private $db;
 
 	function __construct($locaton = 'geolocation'){
-		db_set_active('geolocation');
+		db_set_active($location);
 		$this->db = Database::getConnection();
 	}
 
