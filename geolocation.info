@@ -1,0 +1,5 @@
+name = Geolocation Services
+description = A module that looks up Geolocation information based on latitude/longitude, IP address, postal code, and address.
+core = 7.x
+package = Geolocation
+files[] = geolocation.module

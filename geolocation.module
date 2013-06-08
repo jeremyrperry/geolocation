@@ -1,0 +1,311 @@
+<?php
+require_once('inc/class.geolocation.inc');
+
+function geolocation_menu(){
+	$items['geolocation/ip_address'] = array(
+		'title'=>'IP Address Lookup',
+		'page callback'=>'drupal_get_form',
+		'page arguments'=>array('geolocation_ip_form'),
+		'access callback'=>TRUE,
+		'access arguments'=>array('access content'),
+	);
+	$items['geolocation/postal_code'] = array(
+		'title'=>'Postal Code Lookup',
+		'page callback'=>'drupal_get_form',
+		'page arguments'=>array('geolocation_pc_form'),
+		'access callback'=>TRUE,
+		'access arguments'=>array('access content'),
+	);
+	$items['geolocation/lat_lon_city'] = array(
+		'title'=>'Latitude/Longitude City Lookup',
+		'page callback'=>'drupal_get_form',
+		'page arguments'=>array('geolocation_latlon1_form'),
+		'access callback'=>TRUE,
+		'access arguments'=>array('access content'),
+	);
+	$items['geolocation/lat_lon_address'] = array(
+		'title'=>'Address Latitude/Longitude Lookup',
+		'page callback'=>'drupal_get_form',
+		'page arguments'=>array('geolocation_latlon2_form'),
+		'access callback'=>TRUE,
+		'access arguments'=>array('access content'),
+	);
+	$items['geolocation/address'] = array(
+		'title'=>'Latitude/Longitude Address Lookup',
+		'page callback'=>'drupal_get_form',
+		'page arguments'=>array('geolocation_address_form'),
+		'access callback'=>TRUE,
+		'access arguments'=>array('access content'),
+	);
+	$items['geolocation/export'] = array(
+		'title'=>'Geolocation Export',
+		'page callback'=>'geo_export',
+		'access arguments'=>array('access content'),
+	);
+	return $items;
+}
+
+function geolocation_ip_form($form, &$form_state){
+	$ipAddress = $_SERVER['REMOTE_ADDR'];
+	if($ipAddress == '::1'){
+		$ipAddress = '24.19.187.86';
+	}
+	$form['ip_address'] = array(
+		'#type'=>'textfield',
+		'#title'=>'IP Address',
+		'#required'=>TRUE,
+		'#size'=>20,
+		'#value'=>$ipAddress,
+	);
+	$form['submit_button'] = array(
+		'#type'=>'submit',
+		'#value'=>'lookup',
+	);
+	return $form;
+}
+
+function geolocation_ip_form_validate($form, &$form_state){
+	if (($form_state['values']['ip_address'] == '')){
+		form_set_error('ip_address', t('An IP Address is required.'));
+	}
+}
+function geolocation_ip_form_submit($form, &$form_state){
+	$geolocation = new geolocation;
+	$ipAddress = $form_state['values']['ip_address'];
+	$results = $geolocation->getIp($ipAddress, false);
+	$output = $results['results']['city'].', '.$results['results']['state_region']. ' '.$results['results']['postal_code'].'<br />';
+	$output .= 'Latitude: '.$results['results']['lat'].'<br />';
+	$output .= 'Longitude: '.$results['results']['lng'].'<br />';
+	$output .= '<a href="'.$GLOBALS['base_url'].'/geolocation/export?type=ip_address&value='.$ipAddress.'" target="_blank">Export URL</a>';
+	drupal_set_message($output);
+}
+
+function geolocation_pc_form($form, &$form_state){
+	$form['postal_code'] = array(
+		'#type'=>'textfield',
+		'#title'=>'Postal Code',
+		'#required'=>TRUE,
+		'#size'=>20,
+		'#value'=>98033,
+	);
+	$form['submit_button'] = array(
+		'#type'=>'submit',
+		'#value'=>'lookup',
+	);
+	return $form;
+}
+
+function geolocation_pc_form_validate($form, &$form_state){
+	if (($form_state['values']['postal_code'] == '')){
+		form_set_error('postal_code', t('A Postal Code is required.'));
+	}
+}
+function geolocation_pc_form_submit($form, &$form_state){
+	$geolocation = new geolocation;
+	$results = $geolocation->getPostalCode($form_state['values']['postal_code'], false);
+	$output = $results['results']['city'].', '.$results['results']['state_region']. ' '.$results['results']['postal_code'].'<br />';
+	$output .= 'Latitude: '.$results['results']['lat'].'<br />';
+	$output .= 'Longitude: '.$results['results']['lng'].'<br />';
+	$output .= '<a href="'.$GLOBALS['base_url'].'/geolocation/export?type=postal_code&value='.$form_state['values']['postal_code'].'" target="_blank">Export URL</a>';
+	drupal_set_message($output);
+}
+
+function geolocation_latlon1_form($form, &$form_state){
+	$form['lat'] = array(
+		'#type'=>'textfield',
+		'#title'=>'Latitude',
+		'#required'=>true,
+		'#size'=>20,
+		'#value'=>47.6727,
+	);
+	$form['lon'] = array(
+		'#type'=>'textfield',
+		'#title'=>'Longitude',
+		'#required'=>true,
+		'#size'=>20,
+		'#value'=>-122.1873,
+	);
+	$form['submit_button'] = array(
+		'#type'=>'submit',
+		'#value'=>'lookup',
+	);
+	return $form;
+}
+
+function geolocation_latlon1_form_validate($form, &$form_state){
+	if (($form_state['values']['lat'] == '' || $form_state['values']['lat'] == '')){
+		form_set_error('postal_code', t('Latitude/Longitude values are required.'));
+	}
+}
+function geolocation_latlon1_form_submit($form, &$form_state){
+	$geolocation = new geolocation;
+	$latLon = $form_state['values']['lat'].','.$form_state['values']['lon'];
+	$results = $geolocation->getCityPostalByGeo($latLon, false);
+	$output = $results['results']['city'].', '.$results['results']['state_region']. ' '.$results['results']['postal_code'].'<br />';
+	$output .= '<a href="'.$GLOBALS['base_url'].'/geolocation/export?type=city_postal_by_geo&value='.$latLon.'" target="_blank">Export URL</a>';
+	drupal_set_message($output);
+}
+
+function geolocation_latlon2_form($form, &$form_state){
+	$form['lat'] = array(
+		'#type'=>'textfield',
+		'#title'=>'Latitude',
+		'#required'=>true,
+		'#size'=>20,
+		'#value'=>47.6727,
+	);
+	$form['lon'] = array(
+		'#type'=>'textfield',
+		'#title'=>'Longitude',
+		'#required'=>true,
+		'#size'=>20,
+		'#value'=>-122.1873,
+	);
+	$form['submit_button'] = array(
+		'#type'=>'submit',
+		'#value'=>'lookup',
+	);
+	return $form;
+}
+
+function geolocation_latlon2_form_validate($form, &$form_state){
+	if (($form_state['values']['lat'] == '' || $form_state['values']['lat'] == '')){
+		form_set_error('postal_code', t('Latitude/Longitude values are required.'));
+	}
+}
+
+function geolocation_latlon2_form_submit($form, &$form_state){
+	$geolocation = new geolocation;
+	$latLon = $form_state['values']['lat'].','.$form_state['values']['lon'];
+	$results = $geolocation->getAddressByGeo($latLon, false);
+	$output = $results['results']['address'].'<br />'.$results['results']['city'].', '.$results['results']['state_region']. ' '.$results['results']['postal_code'].'<br />';
+	$output .= '<a href="'.$GLOBALS['base_url'].'/geolocation/export?type=address_by_geo&value='.$latLon.'" target="_blank">Export URL</a>';
+	drupal_set_message($output);
+}
+
+function geolocation_address_form($form, &$form_state){
+	$form['address'] = array(
+		'#type'=>'textfield',
+		'#title'=>'Address',
+		'#required'=>true,
+		'#size'=>20,
+		'#value'=>'1001 Central Ave',
+	);
+	$form['city'] = array(
+		'#type'=>'textfield',
+		'#title'=>'City',
+		'#required'=>true,
+		'#size'=>20,
+		'#value'=>'Kirkland',
+	);
+	$form['state'] = array(
+		'#type'=>'textfield',
+		'#title'=>'State',
+		'#required'=>true,
+		'#size'=>5,
+		'#value'=>'WA',
+	);
+	$form['postal_code'] = array(
+		'#type'=>'textfield',
+		'#title'=>'Postal Code',
+		'#size'=>20,
+		'#value'=>98033,
+	);
+	$form['submit_button'] = array(
+		'#type'=>'submit',
+		'#value'=>'lookup',
+	);
+	return $form;
+}
+
+function geolocation_address_form_validate($form, &$form_state){
+	$checkFor = array('address', 'city', 'state');
+	foreach($checkFor as $c){
+		if (($form_state['values'][$c] == '')){
+			form_set_error($c, t('The value for '.$c.' is required.'));
+		}
+	}
+}
+
+function geolocation_address_form_submit($form, &$form_state){
+	$geolocation = new geolocation;
+	$address = $form_state['values']['address'].',+'.$form_state['values']['city'].',+'.$form_state['values']['state'];
+	if($form_state['values']['postal_code'] != ''){
+		$address .= ',+'.$form_state['values']['postal_code'];
+	}
+	$results = $geolocation->getGeoByAddress($address, false);
+	$output = 'Latitude: '.$results['results']['lat'].'<br />';
+	$output .= 'Longitude: '.$results['results']['lng'].'<br />';
+	$output .= '<a href="'.$GLOBALS['base_url'].'/geolocation/export?type=geo_by_address&value='.$address.'" target="_blank">Export URL</a>';
+	drupal_set_message($output);
+}
+
+function geo_export(){
+	$geolocation = new geolocation;
+	if(isset($_REQUEST['type'])){
+		switch($_REQUEST['type']){
+			case 'ip_address':
+				if(!isset($_REQUEST['value'])){
+					echo $geolocation->getIp($_SERVER['REMOTE_ADDR'], true);
+				}
+				else{
+					echo $geolocation->getIp($_REQUEST['value'], true);
+				}
+				break;
+			case 'postal_code':
+				if(!isset($_REQUEST['value'])){
+					echo $geolocation->error();
+				}
+				else{
+					echo $geolocation->getPostalCode($_REQUEST['value']);
+				}
+				break;
+			case 'geo_by_address':
+				if(!isset($_REQUEST['value'])){
+					echo $geolocation->error();
+				}
+				else{
+					echo $geolocation->getGeoByAddress($_REQUEST['value']);
+				}
+				break;
+			case 'address_by_geo':
+				if(!isset($_REQUEST['value'])){
+					echo $geolocation->error();
+				}
+				else{
+					echo $geolocation->getAddressByGeo($_REQUEST['value']);
+				}
+				break;
+			case 'city_postal_by_geo':
+				if(!isset($_REQUEST['value'])){
+					echo $geolocation->error();
+				}
+				else{
+					echo $geolocation->getCityPostalByGeo($_REQUEST['value']);
+				}
+		}
+		
+	}
+	else{
+		echo $geolocation->error();
+	}
+
+}
+
+/*
+function geolocation_ip(){
+	$geolocation = new geolocation;
+	$ipAddress = $_SERVER['REMOTE_ADDR'];
+	if($ipAddress == '::1'){
+		$ipAddress = '24.19.187.86';
+	}
+	$content = '
+	<input type="text=" name="ip_address" id="ip_address" value="'.$ipAddress.'" /><br />
+	<a href="/geolocation/export?ip_address='.$ipAddress.'" id="ip_export" target="_blank">JSON Export</a><br />
+	<input type="button" name="lookup" id="lookup" value="Lookup" /></p>
+	<div id="results">'.$geolocation->getIp($ipAddress, false).'</div>
+	';
+	return $content;
+}
+*/
+
