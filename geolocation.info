@@ -3,3 +3,4 @@ description = A module that looks up Geolocation information based on latitude/l
 core = 7.x
 package = Geolocation
 files[] = geolocation.module
+scripts[] = geolocation.js

@@ -1,10 +1,14 @@
-jQuery(document).ready(function(){
-		jQuery("#lookup").click(function(){
-			var ipAddress = jQuery("#ip_address").val();
-			var postData = 'ajax=true&ip_address='+ ipAddress;
-			jQuery.post('index.php', postData, function(data){
-				jQuery("#results").html(data);
-				jQuery("#ip_export").attr("href", "export.php?ip_address="+ipAddress);
-			});
-		});
+function geoUpdate(campaignId, fileName){
+	var postData = 'campaign_id='+campaignId;
+	alert(postData);
+	/*
+	jQuery.post('/geolocation/location_update', postData, function(data){
+		var jsonData = jQuery.parseJSON(data);
+		jQuery('#geo_upload_msg').append(data);
+		if(jsonData.status == 'success'){
+			jQuery('#geo_upload_msg').append('<br />Updating complete.');
+			window.location.href = '/geolocation/update_exports?campaign_id='+campaignId+'&file_name='+fileName;
+		}
 	});
+*/
+}

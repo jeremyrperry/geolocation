@@ -6,44 +6,74 @@ function geolocation_menu(){
 		'title'=>'IP Address Lookup',
 		'page callback'=>'drupal_get_form',
 		'page arguments'=>array('geolocation_ip_form'),
-		'access callback'=>TRUE,
-		'access arguments'=>array('access content'),
+		'access arguments'=>array('access geolocation content'),
+		'access callback'=>'user_access',
+		'type'=>MENU_CALLBACK,
 	);
 	$items['geolocation/postal_code'] = array(
 		'title'=>'Postal Code Lookup',
 		'page callback'=>'drupal_get_form',
 		'page arguments'=>array('geolocation_pc_form'),
-		'access callback'=>TRUE,
-		'access arguments'=>array('access content'),
+		'access arguments'=>array('access geolocation content'),
+		'access callback'=>'user_access',
+		'type'=>MENU_CALLBACK,
 	);
 	$items['geolocation/lat_lon_city'] = array(
-		'title'=>'Latitude/Longitude City Lookup',
+		'title'=>'City Lookup',
 		'page callback'=>'drupal_get_form',
 		'page arguments'=>array('geolocation_latlon1_form'),
-		'access callback'=>TRUE,
-		'access arguments'=>array('access content'),
+		'access arguments'=>array('access geolocation content'),
+		'access callback'=>'user_access',
+		'type'=>MENU_CALLBACK,
 	);
 	$items['geolocation/lat_lon_address'] = array(
-		'title'=>'Address Latitude/Longitude Lookup',
+		'title'=>'Reverse Street Address Lookup',
 		'page callback'=>'drupal_get_form',
 		'page arguments'=>array('geolocation_latlon2_form'),
-		'access callback'=>TRUE,
-		'access arguments'=>array('access content'),
+		'access arguments'=>array('access geolocation content'),
+		'access callback'=>'user_access',
+		'type'=>MENU_CALLBACK,
 	);
 	$items['geolocation/address'] = array(
-		'title'=>'Latitude/Longitude Address Lookup',
+		'title'=>'Street Address Lookup',
 		'page callback'=>'drupal_get_form',
 		'page arguments'=>array('geolocation_address_form'),
-		'access callback'=>TRUE,
-		'access arguments'=>array('access content'),
+		'access arguments'=>array('access geolocation content'),
+		'access callback'=>'user_access',
+		'type'=>MENU_CALLBACK,
+	);
+	$items['geolocation/location_uploads'] = array(
+		'title'=>'Location Uploads',
+		'page callback'=>'drupal_get_form',
+		'page arguments'=>array('geolocation_latlon3_form'),
+		'access arguments'=>array('access geolocation content'),
+		'access callback'=>'user_access',
+		'type'=>MENU_CALLBACK,
+	);
+	$items['geolocation/location_exports'] = array(
+		'title'=>'Download Geolocation Uploads',
+		'type'=>MENU_CALLBACK,
+		'page callback'=>'geolocation_export2',
+		'access arguments'=>array('access geolocation content'),
+		'access callback'=>'user_access',
 	);
 	$items['geolocation/export'] = array(
 		'title'=>'Geolocation Export',
-		'page callback'=>'geo_export',
-		'access arguments'=>array('access content'),
+		'type'=>MENU_CALLBACK,
+		'page callback'=>'geolocation_export1',
+		'access arguments'=>TRUE,
 	);
 	return $items;
 }
+
+function geolocation_permission() {
+  return array(
+    'access geolocation content' => array(
+      'title' => t('Access Geolocation Content'),
+    )
+  );
+}
+
 
 function geolocation_ip_form($form, &$form_state){
 	$ipAddress = $_SERVER['REMOTE_ADDR'];
@@ -55,7 +85,6 @@ function geolocation_ip_form($form, &$form_state){
 		'#title'=>'IP Address',
 		'#required'=>TRUE,
 		'#size'=>20,
-		'#value'=>$ipAddress,
 	);
 	$form['submit_button'] = array(
 		'#type'=>'submit',
@@ -86,7 +115,6 @@ function geolocation_pc_form($form, &$form_state){
 		'#title'=>'Postal Code',
 		'#required'=>TRUE,
 		'#size'=>20,
-		'#value'=>98033,
 	);
 	$form['submit_button'] = array(
 		'#type'=>'submit',
@@ -116,14 +144,12 @@ function geolocation_latlon1_form($form, &$form_state){
 		'#title'=>'Latitude',
 		'#required'=>true,
 		'#size'=>20,
-		'#value'=>47.6727,
 	);
 	$form['lon'] = array(
 		'#type'=>'textfield',
 		'#title'=>'Longitude',
 		'#required'=>true,
 		'#size'=>20,
-		'#value'=>-122.1873,
 	);
 	$form['submit_button'] = array(
 		'#type'=>'submit',
@@ -152,14 +178,12 @@ function geolocation_latlon2_form($form, &$form_state){
 		'#title'=>'Latitude',
 		'#required'=>true,
 		'#size'=>20,
-		'#value'=>47.6727,
 	);
 	$form['lon'] = array(
 		'#type'=>'textfield',
 		'#title'=>'Longitude',
 		'#required'=>true,
 		'#size'=>20,
-		'#value'=>-122.1873,
 	);
 	$form['submit_button'] = array(
 		'#type'=>'submit',
@@ -183,33 +207,128 @@ function geolocation_latlon2_form_submit($form, &$form_state){
 	drupal_set_message($output);
 }
 
+function geolocation_latlon3_form($form, &$form_state){
+	$form['csv_file'] = array(
+		'#type'=>'file',
+		'#title'=>'CSV File',
+		'#size'=>20,
+		'#upload_validators'=>array('file_validate_extension'=>array('csv')),
+	);
+	$form['submit_button'] = array(
+		'#type'=>'submit',
+		'#value'=>'lookup',
+	);
+	$form['#attributes'] = array('enctype' => "multipart/form-data");
+	return $form;
+}
+
+
+function geolocation_latlon3_form_submit($form, &$form_state){
+	if(isset($form_state['values']['csv_file'])){
+		$modPath = drupal_get_path('module', 'geolocation');
+		$dir = 'public://geolocation/temp_files/';
+		$output = '';
+		//file_prepare_directory($dir, FILE_CREATE_DIRECTORY);
+		$file = file_save_upload('csv_file', array('file_validate_extensions'=>array('csv')), $dir, FILE_EXISTS_RENAME);
+		$filename = $dir.$file->filename;
+		$fileUrl = file_create_url($filename);
+		$geolocation = new geolocation;
+		ini_set('auto_detect_line_endings', true);
+		$fOpen = fopen($fileUrl, 'r');
+		$addressLookup = array();
+		$fields = array();
+		$values = array();
+		$indexes = array(
+			'lat'=>'',
+			'lng'=>'',
+			'street'=>'',
+			'city'=>'',
+			'state'=>'',
+			'postal'=>'',
+			'campaignID'=>'',
+		);
+		$rewrite = false;
+		$campaignId = '';
+		while(!feof($fOpen)){
+			$csv = fgetcsv($fOpen);
+			$count = count($csv);
+			if(empty($fields)){
+				for($i=1; $i<$count; $i++){
+					$fields[] = '`'.$csv[$i].'`';
+					foreach($indexes as $in=>$inn){
+						if(stristr($csv[$i], $in) !== FALSE){
+							$indexes[$in] = $i;
+						}
+					}
+				}
+			}
+			else{
+				if($csv[$indexes['lng']] == '' || $csv[$index['lat']] == ''){
+					$rewrite = true;
+					$address = $csv[$indexes['street']].', '.$csv[$indexes['city']].', '.$csv[$indexes['state']].' '.$csv[$indexes['postal']];
+					$addInsert['index'] = count($values);
+					$addInsert['address'] = $address;
+					$addressLookup[] = $addInsert;
+				}
+				$fCount = count($fields);
+				$query = array();
+				for($i=0; $i<$fCount; $i++){
+					$iAt = $i+1;
+					$query[$fields[$i]] = $csv[$iAt];
+					if($iAt == $indexes['campaignID'] && $campaignId == ''){
+						$campaignId = $csv[$iAt];
+					}
+				}
+				$values[] = $query;
+			}
+		}
+		
+		$addResults = $geolocation->getGeoByAddressMq($addressLookup, false);
+		//$output .= $addResults['msg'];
+		foreach($addResults['results'] as $ar){
+			$values[$ar['index']]['`lat`'] = $ar['lat'];
+			$values[$ar['index']]['`lng`'] = $ar['lng'];
+		}
+		unset($geolocation);
+		fclose($fOpen);
+		db_set_active('phad_maps');
+		db_query('truncate table locations');
+		$q = db_insert('locations')->fields($fields);
+		foreach($values as $val){
+			$q->values($val);
+		}
+		$q->execute();
+		db_set_active('default');
+		$output .= 'Information from the CSV file has been updated with latitude/longitude information and saved to the database.<br />';
+		$output .= '<a href="'.$GLOBALS['base_url'].'/geolocation/location_exports?campaign_id='.$campaignId.'&file_name='.$file->filename.'" target="_blank">Download Updated File</a>';
+		drupal_set_message($output);
+		file_delete($file);
+	}
+}
+
 function geolocation_address_form($form, &$form_state){
 	$form['address'] = array(
 		'#type'=>'textfield',
 		'#title'=>'Address',
-		'#required'=>true,
 		'#size'=>20,
-		'#value'=>'1001 Central Ave',
+		'#requried'=>true,
 	);
 	$form['city'] = array(
 		'#type'=>'textfield',
 		'#title'=>'City',
 		'#required'=>true,
 		'#size'=>20,
-		'#value'=>'Kirkland',
 	);
 	$form['state'] = array(
 		'#type'=>'textfield',
 		'#title'=>'State',
 		'#required'=>true,
 		'#size'=>5,
-		'#value'=>'WA',
 	);
 	$form['postal_code'] = array(
 		'#type'=>'textfield',
 		'#title'=>'Postal Code',
 		'#size'=>20,
-		'#value'=>98033,
 	);
 	$form['submit_button'] = array(
 		'#type'=>'submit',
@@ -219,7 +338,7 @@ function geolocation_address_form($form, &$form_state){
 }
 
 function geolocation_address_form_validate($form, &$form_state){
-	$checkFor = array('address', 'city', 'state');
+	$checkFor = array('city', 'state');
 	foreach($checkFor as $c){
 		if (($form_state['values'][$c] == '')){
 			form_set_error($c, t('The value for '.$c.' is required.'));
@@ -229,27 +348,84 @@ function geolocation_address_form_validate($form, &$form_state){
 
 function geolocation_address_form_submit($form, &$form_state){
 	$geolocation = new geolocation;
-	$address = $form_state['values']['address'].',+'.$form_state['values']['city'].',+'.$form_state['values']['state'];
+	$address = str_replace(' ', '+', $form_state['values']['address']).',+'.$form_state['values']['city'].',+'.$form_state['values']['state'];
 	if($form_state['values']['postal_code'] != ''){
 		$address .= ',+'.$form_state['values']['postal_code'];
 	}
 	$results = $geolocation->getGeoByAddress($address, false);
 	$output = 'Latitude: '.$results['results']['lat'].'<br />';
 	$output .= 'Longitude: '.$results['results']['lng'].'<br />';
-	$output .= '<a href="'.$GLOBALS['base_url'].'/geolocation/export?type=geo_by_address&value='.$address.'" target="_blank">Export URL</a>';
+	$output .= '<a href="'.$GLOBALS['base_url'].'/geolocation/export?type=geo_by_address&value='.$address.'">Export URL</a>';
 	drupal_set_message($output);
 }
 
-function geo_export(){
+function geolocation_export2(){
+	if(isset($_REQUEST['campaign_id'])){
+		
+		db_set_active('phad_maps');
+		$q = db_query('select * from locations where `locations.campaignID` = :cid', array(':cid'=> $_REQUEST['campaign_id']));
+		
+		$header = false;
+		$output = '';
+		while($r = $q->fetchAssoc()){
+			$arrCount = count($r);
+			if(!$header){
+				$hCount = 1;
+				foreach($r as $k=>$v){
+					$last = "false";
+					if($hCount == $arrCount){
+						$last = "true";
+					}
+					$output .= geolocation_csvConvert($k, $last);
+					$hCount++;
+				}
+				$header = true;
+			}
+			$count = 1;
+			foreach($r as $k=>$v){
+				$last = "false";
+				if($count == $arrCount){
+					$last = "true";
+				}
+				$output .= geolocation_csvConvert($v, $last);
+				$count++;
+			}
+		}
+		$filename = $_REQUEST['file_name'];
+		db_set_active('default');
+		header ('Content-Disposition: attachment; filename=' . $filename . ';') ;
+        echo $output;
+        exit;
+	}
+}
+
+function geolocation_csvConvert($theVal, $valPosition){
+	$csvTerminated = "\n";
+    $csvSeparator = ",";
+    $csvEnclosed = '"';
+    $csvEscaped = "\\";
+	$valOutput = stripslashes(stripslashes($theVal));
+	$valOutput = str_replace($csvEnclosed, $csvEscaped . $csvEnclosed, $valOutput);
+	$valOutput = $csvEnclosed . $valOutput . $csvEnclosed;
+	if($valPosition == "false"){
+		$valOutput .= $csvSeparator;
+	}
+	else{
+		$valOutput .= $csvTerminated;
+	}
+	return $valOutput;
+}
+
+function geolocation_export1(){
 	$geolocation = new geolocation;
 	if(isset($_REQUEST['type'])){
 		switch($_REQUEST['type']){
 			case 'ip_address':
 				if(!isset($_REQUEST['value'])){
-					echo $geolocation->getIp($_SERVER['REMOTE_ADDR'], true);
+					echo $geolocation->getIp($_SERVER['REMOTE_ADDR']);
 				}
 				else{
-					echo $geolocation->getIp($_REQUEST['value'], true);
+					echo $geolocation->getIp($_REQUEST['value']);
 				}
 				break;
 			case 'postal_code':
@@ -291,21 +467,4 @@ function geo_export(){
 	}
 
 }
-
-/*
-function geolocation_ip(){
-	$geolocation = new geolocation;
-	$ipAddress = $_SERVER['REMOTE_ADDR'];
-	if($ipAddress == '::1'){
-		$ipAddress = '24.19.187.86';
-	}
-	$content = '
-	<input type="text=" name="ip_address" id="ip_address" value="'.$ipAddress.'" /><br />
-	<a href="/geolocation/export?ip_address='.$ipAddress.'" id="ip_export" target="_blank">JSON Export</a><br />
-	<input type="button" name="lookup" id="lookup" value="Lookup" /></p>
-	<div id="results">'.$geolocation->getIp($ipAddress, false).'</div>
-	';
-	return $content;
-}
-*/
 
