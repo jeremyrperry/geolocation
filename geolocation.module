@@ -57,6 +57,13 @@ function geolocation_menu(){
 		'access arguments'=>array('access geolocation content'),
 		'access callback'=>'user_access',
 	);
+	$items['geolocation/location_downloads'] = array(
+		'title'=>'Location Downloads',
+		'type'=>MENU_CALLBACK,
+		'page callback'=>'geolocation_downloads',
+		'access arguments'=>array('access geolocation content'),
+		'access callback'=>'user_access',
+	);
 	$items['geolocation/export'] = array(
 		'title'=>'Geolocation Export',
 		'type'=>MENU_CALLBACK,
@@ -274,6 +281,9 @@ function geolocation_latlon3_form_submit($form, &$form_state){
 				$query = array();
 				for($i=0; $i<$fCount; $i++){
 					$iAt = $i+1;
+					if(empty($csv[$iAt])){
+						$csv[$iAt] = NULL;
+					}
 					$query[$fields[$i]] = $csv[$iAt];
 					if($iAt == $indexes['campaignID'] && $campaignId == ''){
 						$campaignId = $csv[$iAt];
@@ -292,7 +302,7 @@ function geolocation_latlon3_form_submit($form, &$form_state){
 		unset($geolocation);
 		fclose($fOpen);
 		db_set_active('phad_maps');
-		db_query('truncate table locations');
+		//db_query('truncate table locations');
 		$q = db_insert('locations')->fields($fields);
 		foreach($values as $val){
 			$q->values($val);
@@ -356,14 +366,34 @@ function geolocation_address_form_submit($form, &$form_state){
 	$output = 'Latitude: '.$results['results']['lat'].'<br />';
 	$output .= 'Longitude: '.$results['results']['lng'].'<br />';
 	$output .= '<a href="'.$GLOBALS['base_url'].'/geolocation/export?type=geo_by_address&value='.$address.'">Export URL</a>';
-	drupal_set_message($output);
+	drupal_set_message(t($output));
+}
+
+function geolocation_downloads(){
+	db_set_active('phad_maps');
+	$output = '';
+	$q = db_query('select distinct `campaignID` from locations where `campaignID` is not null and `campaignID` != 0');
+	$output .= '<ul>';
+	while($r = $q->fetchAssoc()){
+		$output .= '<li><a href="'.$GLOBALS['base_url'].'/geolocation/location_exports?campaign_id='.$r['campaignID'].'" target="_blank">'.$r['campaignID'].'</a></li>';
+	}
+	$output .= '</ul>';
+
+	db_set_active('default');
+	return t($output);
 }
 
 function geolocation_export2(){
-	if(isset($_REQUEST['campaign_id'])){
+	//if(isset($_REQUEST['campaign_id'])){
 		
 		db_set_active('phad_maps');
-		$q = db_query('select * from locations where `locations.campaignID` = :cid', array(':cid'=> $_REQUEST['campaign_id']));
+		$query = 'select * from locations';
+		$campaignId = '';
+		if(isset($_REQUEST['campaign_id'])){
+			$query .= ' where `campaignID` = :cid';
+			$campaignId = array(':cid'=> $_REQUEST['campaign_id']);
+		}
+		$q = db_query($query, $campaignId);;
 		
 		$header = false;
 		$output = '';
@@ -391,12 +421,15 @@ function geolocation_export2(){
 				$count++;
 			}
 		}
-		$filename = $_REQUEST['file_name'];
+		$filename = 'phad_maps.csv';
+		if(isset($_REQUEST['file_name'])){
+			$filename = $_REQUEST['file_name'];
+		}
 		db_set_active('default');
 		header ('Content-Disposition: attachment; filename=' . $filename . ';') ;
         echo $output;
         exit;
-	}
+	//}
 }
 
 function geolocation_csvConvert($theVal, $valPosition){
