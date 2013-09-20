@@ -1,0 +1,68 @@
+<?php
+
+function geolocation_install(){
+	$sql = "DROP TABLE IF EXISTS `geolocation_api_track`;
+	CREATE TABLE `geolocation_api_track` (
+	  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+	  `api_val_id` int(11) NOT NULL,
+	  `insert_count` int(11) NOT NULL,
+	  `timestamp` int(20) NOT NULL,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+	DROP TABLE IF EXISTS `geolocation_api_values`;
+	CREATE TABLE `geolocation_api_values` (
+	  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+	  `name` varchar(255) NOT NULL DEFAULT '',
+	  `description` varchar(255) NOT NULL DEFAULT '',
+	  `api_key` varchar(255) NOT NULL DEFAULT '',
+	  `limit_qty` int(11) DEFAULT NULL,
+	  `limit_time_unit` varchar(255) DEFAULT NULL,
+	  PRIMARY KEY (`id`),
+	  UNIQUE KEY `name` (`name`),
+	  UNIQUE KEY `api_key` (`description`)
+	) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+	DROP TABLE IF EXISTS `geolocation_weather_cache`;
+	CREATE TABLE `geolocation_weather_cache` (
+	  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+	  `timestamp` int(20) NOT NULL,
+	  `postal_code` varchar(255) NOT NULL DEFAULT '',
+	  `city` varchar(255) NOT NULL DEFAULT '',
+	  `state_region` varchar(255) NOT NULL DEFAULT '',
+	  `lat` varchar(255) NOT NULL DEFAULT '',
+	  `lng` varchar(255) NOT NULL DEFAULT '',
+	  `nws_xml` text NOT NULL,
+	  `nws_page` varchar(255) NOT NULL DEFAULT '',
+	  `forecast_length` varchar(255) NOT NULL DEFAULT '',
+	  `data` longtext NOT NULL,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+	DROP TABLE IF EXISTS `geolocation_cities`;
+	CREATE TABLE `geolocation_cities` (
+	  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+	  `country` varchar(255) CHARACTER SET latin1 NOT NULL DEFAULT '',
+	  `state_region` varchar(255) CHARACTER SET latin1 DEFAULT NULL,
+	  `city` varchar(255) CHARACTER SET latin1 DEFAULT NULL,
+	  `postal_code` varchar(255) CHARACTER SET latin1 DEFAULT NULL,
+	  `lat` varchar(255) CHARACTER SET latin1 NOT NULL DEFAULT '',
+	  `lng` varchar(255) CHARACTER SET latin1 NOT NULL DEFAULT '',
+	  `metro_code` int(11) DEFAULT NULL,
+	  `area_code` int(11) DEFAULT NULL,
+	  PRIMARY KEY (`id`)
+	) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+	DROP TABLE IF EXISTS `geolocation_ip_locations`;
+	CREATE TABLE `geolocation_ip_locations` (
+	  `id` int(30) unsigned NOT NULL AUTO_INCREMENT,
+	  `start_ip_num` int(30) NOT NULL,
+	  `end_ip_num` int(30) NOT NULL,
+	  `loc_id` int(30) NOT NULL,
+	  PRIMARY KEY (`id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+	db_query($sql);
+}
+
+function geolocation_uninstall(){
+	$drop = array('geolocation_weather_cache', 'geolocation_api_values', 'geolocation_api_track', 'geolocation_ip_locations', 'geolocation_cities');
+	foreach($drop as $d){
+		db_query('drop table if exists '.$d);
+	}
+}

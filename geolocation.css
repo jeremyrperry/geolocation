@@ -1,0 +1,10 @@
+/*This CSS file provides any necessary styling rules for the geolocaiton module */
+
+/*
+The CSS necessary to provide block display for each day on the weather display information.
+*/
+#weather_days div{
+	display: inline-block;
+	margin-right: 25px;
+	text-align: center;
+}

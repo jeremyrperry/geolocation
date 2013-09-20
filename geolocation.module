@@ -1,124 +1,15 @@
 <?php
-require_once('inc/class.geolocation.inc');
-
-function geolocation_menu(){
-	$geolocation = new geolocation;
-	return $geolocation->menu();
-}
-
-function geolocation_permission() {
- 	$geolocation = new geolocation;
- 	return $geolocation->permission();
-}
-
-function geolocation_ip_form($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->ipForm($form, $form_state);
-}
-
-/*
-function geolocation_ip_form_validate($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->ipFormValidate($form, $form_state);
-}
+/**
+*This script houses the Drupal boot hook procedural callup for the Geolocation Module.  It depends on the moopapi module being installed, as virtually of the code is written in OOP.  See inc/class.geolocation.inc for the code pertaining to the class.
+*@link http://www.jeremyrperry.com
+*@version 2.0
+*@author Jeremy Perry jperry@phluant.com, jeremyrperry@gmail.com
+*@package Phluant Mobile Drupal 7 Geolocation Module
+*@todo Updated on 9-18-13 to integrate with the moopapi module and to remove the old hook procedural functions.
+*
 */
 
-function geolocation_ip_form_submit($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->ipFormSubmit($form, $form_state);
-}
-
-function geolocation_pc_form($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->pcForm($form, $form_state);
-}
-
-function geolocation_pc_form_validate($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->pcFormValidate($form, $form_state);
-}
-function geolocation_pc_form_submit($form, &$form_state){
-	$geolocation = new geolocation;
-	$geolocation->pcFormSubmit($form, $form_state);
-}
-
-function geolocation_latlon1_form($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->latLon1Form($form, $form_state);
-}
-
-function geolocation_latlon1_form_validate($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->latLon1FormValidate($form, $form_state);
-}
-function geolocation_latlon1_form_submit($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->latLon1FormSubmit($form, $form_state);
-}
-
-function geolocation_latlon2_form($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->latLon2Form($form, $form_state);
-}
-
-function geolocation_latlon2_form_validate($form, &$form_state){
-	$geolocation = new geolocatin;
-	return $geolocation->latLon2FormValidate($form, $form_state);
-}
-
-function geolocation_latlon2_form_submit($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->latLon2FormSubmit($form, $form_state);
-}
-
-function geolocation_latlon3_form($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->latLon3Form($form, $form_state);
-}
-
-
-function geolocation_latlon3_form_submit($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->latLon3FormSubmit($form, $form_state);
-}
-
-function geolocation_address_form($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->addressForm($form, $form_state);
-}
-
-function geolocation_address_form_validate($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->addressFormValidate($form, $form_state);
-}
-
-function geolocation_address_form_submit($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->addressFormSubmit($form, $form_state);
-}
-
-function geolocation_weather_form($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->weatherForm($form, $form_state);
-}
-
-function geolocation_weather_form_submit($form, &$form_state){
-	$geolocation = new geolocation;
-	return $geolocation->weatherFormSubmit($form, $form_state);
-}
-
-function geolocation_downloads(){
-	$geolocation = new geolocation;
-	return $geolocation->downloads();
-}
-
-function geolocation_export2(){
-	$geolocation = new geolocation();
-	return $geolocation->export2();
-}
-
-function geolocation_export1(){
-	$geolocation = new geolocation;
-	return $geolocation->export1($_REQUEST);
+function geolocation_boot(){
+	module_invoke('moopapi', 'register', 'geolocation');
 }
 
