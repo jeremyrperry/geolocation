@@ -1,0 +1,15 @@
+<?php
+/**
+*This script houses the Drupal boot hook procedural callup for the Geolocation Basic Module.  It depends on the moopapi module being installed, as virtually of the code is written in OOP.  See inc/class.geolocation_basic.inc for the code pertaining to the class.
+*@link http://www.jeremyrperry.com
+*@version 2.0
+*@author Jeremy Perry jperry@phluant.com, jeremyrperry@gmail.com
+*@package Phluant Mobile Drupal 7 Geolocation Module
+*@todo Updated on 9-18-13 to integrate with the moopapi module and to remove the old hook procedural functions.
+*
+*/
+
+function geolocation_basic_boot(){
+	module_invoke('moopapi', 'register', 'geolocation_basic');
+}
+

@@ -9,13 +9,8 @@
 *
 */
 
-class geolocation{
+class geolocation_basic{
 	protected $mapquest_api;
-
-	/**
-	*The construct function pulls the MapQuest API key from the database.
-	*@return the private $mapquest_api variable gets the key value.  See the getApi function for more details.
-	*/
 
 	/**
 	*The destruct function ensures the default database is set so there are no potential errors.
@@ -1113,7 +1108,7 @@ class geolocation{
 		$items['geolocation/ip_address'] = array(
 			'title'=>'IP Address Lookup',
 			'page callback'=>'drupal_get_form',
-			'page arguments'=>array('geolocation_ip_form'),
+			'page arguments'=>array('geolocation_basic_ip_form'),
 			'access arguments'=>array('access geolocation content'),
 			'access callback'=>'user_access',
 			'type'=>MENU_CALLBACK,
@@ -1122,7 +1117,7 @@ class geolocation{
 		$items['geolocation/postal_code'] = array(
 			'title'=>'Postal Code Lookup',
 			'page callback'=>'drupal_get_form',
-			'page arguments'=>array('geolocation_pc_form'),
+			'page arguments'=>array('geolocation_basic_pc_form'),
 			'access arguments'=>array('access geolocation content'),
 			'access callback'=>'user_access',
 			'type'=>MENU_CALLBACK,
@@ -1131,7 +1126,7 @@ class geolocation{
 		$items['geolocation/lat_lon_city'] = array(
 			'title'=>'City Lookup',
 			'page callback'=>'drupal_get_form',
-			'page arguments'=>array('geolocation_latlon1_form'),
+			'page arguments'=>array('geolocation_basic_latlon1_form'),
 			'access arguments'=>array('access geolocation content'),
 			'access callback'=>'user_access',
 			'type'=>MENU_CALLBACK,
@@ -1140,7 +1135,7 @@ class geolocation{
 		$items['geolocation/lat_lon_address'] = array(
 			'title'=>'Reverse Street Address Lookup',
 			'page callback'=>'drupal_get_form',
-			'page arguments'=>array('geolocation_latlon2_form'),
+			'page arguments'=>array('geolocation_basic_latlon2_form'),
 			'access arguments'=>array('access geolocation content'),
 			'access callback'=>'user_access',
 			'type'=>MENU_CALLBACK,
@@ -1149,7 +1144,7 @@ class geolocation{
 		$items['geolocation/address'] = array(
 			'title'=>'Street Address Lookup',
 			'page callback'=>'drupal_get_form',
-			'page arguments'=>array('geolocation_address_form'),
+			'page arguments'=>array('geolocation_basic_address_form'),
 			'access arguments'=>array('access geolocation content'),
 			'access callback'=>'user_access',
 			'type'=>MENU_CALLBACK,
@@ -1158,7 +1153,7 @@ class geolocation{
 		$items['geolocation/export'] = array(
 			'title'=>'Geolocation Export',
 			'type'=>MENU_CALLBACK,
-			'page callback'=>'geolocation_export1',
+			'page callback'=>'geolocation_basic_export1',
 			'access arguments'=>array('access content'),
 		);
 		//The weather page
@@ -1166,7 +1161,7 @@ class geolocation{
 			'title'=>'Geolocation Weather',
 			'type'=>MENU_CALLBACK,
 			'page callback'=>'drupal_get_form',
-			'page arguments'=>array('geolocation_weather_form'),
+			'page arguments'=>array('geolocation_basic_weather_form'),
 			'access arguments'=>array('access geolocation content'),
 			'access callback'=>'user_access',
 		);
@@ -1251,11 +1246,24 @@ class geolocation{
 			'#type'=>'textfield',
 			'#title'=>'Latitude',
 			'#size'=>20,
+			'#attributes' => array(
+    			'class' => array('lat'),
+  			),
 		);
 		$form['lng'] = array(
 			'#type'=>'textfield',
 			'#title'=>'Longitude',
 			'#size'=>20,
+			'#attributes' => array(
+    			'class' => array('lng'),
+  			),
+		);
+		$form['lat_lon_lookup'] = array(
+			'#type'=>'checkbox',
+			'#title'=>'Use Current Lat/Lon',
+			'#attributes' => array(
+    			'class' => array('lat_lng_lookup'),
+  			),
 		);
 		$form['postal_code'] = array(
 			'#type'=>'textfield',
