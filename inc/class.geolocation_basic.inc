@@ -146,6 +146,10 @@ class geolocation_basic{
 		$results['country'] = trim($address[3]);
 		$output['status'] = 'success';
 		$output['results'] = $results;
+		$dma = $this->getDma($output['results']['lat'].','.$output['results']['lng'], false);
+		if($dma['status'] == 'success'){
+			$output['results']['dma'] = $dma['results'];
+		}
 		//Converts to JSON format unless otherwise specified, and output is returned.
 		if($isJson){
 			$output = json_encode($output);
@@ -181,7 +185,10 @@ class geolocation_basic{
 			else{
 				$output = $this->getAddressByGeo($val, false);
 			}
-			
+			$dma = $this->getDma($output['results']['lat'].','.$output['results']['lng'], false);
+			if($dma['status'] == 'success'){
+				$output['results']['dma'] = $dma['results'];
+			}
 		}
 		//No bueno
 		else{
@@ -189,6 +196,52 @@ class geolocation_basic{
 			$output['results'] = 'Query failure';
 		}
 		//Output is converted to JSON unless the boolean was set to false, database set to default, and output is returned.
+		if($isJson){
+			$output = json_encode($output);
+		}
+		return $output;
+	}
+
+	/**
+	*The getDma function pulls up the closest possible DMA based on the inputted geolocation value.  Because of variations in DMA boundaries, this function may have a noticeable margin of error.
+	*@param string $geo
+	*@param boolean $isJson
+	*@return DMA information
+	*/
+	protected function getDma($geo, $isJson = true){
+		$geo = explode(',', $geo);
+		//The next four lines draw up the latitude/longitude permiter to search in, and modified for PHP.  It uses the values from $lat, $lng, and $dist to perform the calculations.  It is based on that 1 degree of latitude is equivelant to 69.09 miles and 1 degree of longitude is equivelant to the cosign of the latitude times 69.09.  For more detailed information, see slides 10 and 11 of the GeoSpacial MySQL Search whitepaper at http://www.scribd.com/doc/2569355/Geo-Distance-Search-with-MySQL.
+		$dist = 1000;
+		$lat = $geo[0];
+		$lng = $geo[1];
+		$lng1 = $lng-$dist/abs(cos(deg2rad($lat))*69.09);
+		$lng2 = $lng+$dist/abs(cos(deg2rad($lat))*69.09);
+		$lat1 = $lat-($dist/69.09);
+		$lat2 = $lat+($dist/69.09);
+		//Output array is set
+		$output = array();
+		//Query is set and run
+		$insertVals = array(
+			':lat0'=>$lat,
+			':lng0'=>$lng,
+			':lat1'=>$lat1,
+			':lat2'=>$lat2,
+			':lng1'=>$lng1,
+			':lng2'=>$lng2,
+		);
+		$query = "select *, round(degrees(acos(sin(radians(:lat0))*sin(radians(lat))+cos(radians(:lat0))*cos(radians(lat))*cos(radians(:lng0 - lng)))) *69.09) as distance from geolocation_dma where lng between :lng1 and :lng2 and lat between :lat1 and :lat2 order by distance limit 1";
+		$q = db_query($query, $insertVals);
+		//Outputs an error message if there was a problem with the query
+		if(!$q){
+			$output['status'] = 'error';
+			$output['error_msg'] = 'query failure';
+		}
+		//If query is successful, results are outputted.
+		else{
+			$output['status'] = 'success';
+			$output['results'] = $q->fetchAssoc();
+		}
+		//Output is converted into JSON by default, unless otherwise specified.
 		if($isJson){
 			$output = json_encode($output);
 		}
@@ -219,6 +272,10 @@ class geolocation_basic{
 		$results['lng'] = $json['results'][0]['geometry']['location']['lng'];
 		$output['status'] = 'success';
 		$output['results'] = $results;
+		$dma = $this->getDma($output['results']['lat'].','.$output['results']['lng'], false);
+		if($dma['status'] == 'success'){
+			$output['results']['dma'] = $dma['results'];
+		}
 		//Converts to JSON format unless otherwise specified, and output is returned.
 		if($isJson){
 			$output = json_encode($output);
@@ -368,6 +425,10 @@ class geolocation_basic{
 					$output['results'] = $this->ipCorrect($r2);
 				}
 			}
+			$dma = $this->getDma($output['results']['lat'].','.$output['results']['lng'], false);
+			if($dma['status'] == 'success'){
+				$output['results']['dma'] = $dma['results'];
+			}
 		}
 		//Data will be converted to JSON unless boolean is false.
 		if($isJson){
@@ -404,6 +465,10 @@ class geolocation_basic{
 				$r = $q->fetchAssoc();
 				$output['status'] = 'success';
 				$output['results'] = $r;
+				$dma = $this->getDma($output['results']['lat'].','.$output['results']['lng'], false);
+				if($dma['status'] == 'success'){
+					$output['results']['dma'] = $dma['results'];
+				}
 			}
 			else{
 				$output = $this->getGeoByAddress($postalCode, false);
@@ -682,10 +747,11 @@ class geolocation_basic{
 	/**
 	*The ipCheck function provides a default IP in the instance of the site being run in a local dev environment
 	*@param string $ip
-	*@return The ip will be passed back as entered unless it equals ::1
+	*@return The ip will be passed back as entered unless an array match is found, in which case it will enter a Kirkland, WA based IP.
 	*/
 	protected function ipCheck($ip){
-		if($ip == '::1'){
+		$convert = array('127.0.0.1', '::1');
+		if(in_array($ip, $convert)){
 			$ip = '24.19.187.86';
 		}
 		return $ip;
@@ -848,6 +914,15 @@ class geolocation_basic{
 
 			//Switch statement performed for type
 			switch($_REQUEST['type']){
+				//DMA infromation is returned
+				case 'dma':
+					if(!isset($_REQUEST['value'])){
+						echo $this->error();
+					}
+					else{
+						echo $this->getDma($_REQUEST['value']);
+					}
+					break;
 				//Location by IP address data is returned.
 				case 'ip_address':
 					if(!isset($_REQUEST['value'])){
@@ -899,7 +974,7 @@ class geolocation_basic{
 						echo $this->error();
 						break;
 					}
-					if($_REQUEST['subtype'] == 'ip_address' && (!isset($_REQUEST['value']) || $_REQUEST['value'])){
+					if($_REQUEST['subtype'] == 'ip_address' && (!isset($_REQUEST['value']) || $_REQUEST['value'] == '')){
 						$_REQUEST['value'] = $this->ipCheck($_SERVER['REMOTE_ADDR']);
 					}
 					echo $this->getWeather($_REQUEST);
