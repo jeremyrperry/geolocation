@@ -1,0 +1,19 @@
+geolocation_basic
+=================
+
+A Drupal Geolocation Module
+
+RDBMS Geolocaiton setup
+
+--------------------------------------------------
+
+Setup of the Maxmind IP Geolocation data into an RDBMS is a mostly straightforward process that can be done with virtually any DB admin application.  The tables are provided on the install, so a few steps will get you up and running.
+
+1) Download either the Geolite or Geoip CSV data from Maxmind.
+2) Whether using the geolite or geoip versions, Maxmind provides two CSV files.  The file name ending in -Blocks and -Locations correlates to the geolocation_ip_locations and geolocation_cities tables respectively.
+3) In both files, delete the Maxmind copyright notice, as it will interfere with the import process.
+4) In the blocks file, replace the existing headers (startIpNum, endIpNum, locId) with the new headers (start_ip_num, end_ip_num, loc_id).
+4d) In the location file, replace the existing headers (locId, country, region, city, postalCode, latitude, longitude,	metroCode, areaCode) with the new headers (id, country, state_region, postal_code, lat, lng, dma_code, area_code).
+6) Using a db admin application of your choice, import the CSV files into their respective tables.
+
+Note:  The Locations file sometimes has issues in some db admin programs because of the formatting Maxmind uses, Shift JIS.  This can occur even when the geolocation_cities table is encoded the same way.  If you encounter this problem, I have a PHP/MySQL application available on GitHub that will do the import without issue.  Here is the repository link:  https://github.com/jeremyrperry/maxmind_locations_php_importer

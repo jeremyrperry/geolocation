@@ -1,3 +1,4 @@
+//This JavaScritp file is to populate the latitude and longitude fields with the user's HTML5 geocoordinates.
 jQuery(document).ready(function(){
 	jQuery('.lat_lng_lookup').click(function(){
 		if(jQuery(this).attr('checked')){

@@ -1,0 +1,28 @@
+geolocation_basic
+=================
+
+A Drupal Geolocation Module
+
+Binary Database setup
+
+--------------------------------------------------
+
+If you choose to set up the binary database, congratulations!  You are using the most recommended IP lookup setup that has the best overall performance.  The module does a lot of the heavy lifting, but it still requires some setup on your part.  Don't worry though.  So long as you can download a couple of items, edit a couple of files, and can run a few command line functions, you'll be up and running in no time.
+
+
+1)Download either the Geolite or GeoIP version of the database from Maxmind and place it in the binary_db directory of the module*.  Here is the link to the Geolite download:  http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz
+2) Download/clone the Binary API from GitHub into the binary_db_api directory of the module*.  Please be aware that this API requires PHP 5.3 or greater.  Here is the link:  https://github.com/maxmind/GeoIP2-php
+3) Open composer.json in a text editor and add in the following:
+
+	"require": {
+        "geoip2/geoip2": "0.5.*"
+    },
+
+4) In the command line, navigate to the binary_db_api directory of the module* and install Composer:  curl -s http://getcomposer.org/installer | php
+5)In the command line, install the API's dependencies:  php composer.phar install
+6)On approximately line 18 in inc/class.geolocation_basic_abstract.inc, change the $ipSource variable value to 'binary'.
+7)Clear Drupal's cache if necessary.
+
+That's it.  You should be set to go.  Please be aware that some pre-packaged local dev environments (i.e. MAMP, XAMPP, WAMP) may require some additional setups to make Composer run properly.  If this is the case, Google is your best friend in finding the answers.  More detailed documentation for the database API can be found on its GitHub repository.
+
+*Customization of directory locations is completely possible and encouraged if it suits your server settings better.  This will require customization though...

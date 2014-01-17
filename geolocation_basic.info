@@ -6,6 +6,7 @@ package = Geolocation Basic
 files[] = geolocation_basic.module
 files[] = geolocation_basic.install
 files[] = inc/class.geolocation_basic.inc
+files[] = inc/class.geolocation_basic_abstract.inc
 dependencies[] = moopapi
 scripts[] = geolocation_basic.js
 stylesheets[screen][] = geolocation_basic.css
