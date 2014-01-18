@@ -15,7 +15,7 @@ abstract class geolocation_basic_abstract{
 	//Adjust this boolean to use mongodb throughout the class if desired.  This will not affect the IP lookup if binary is selected.
 	public $useMongo = false;
 	//Adjust this variable to change the desired IP lookup source.
-	public $ipSource = 'binary';
+	public $ipSource = 'freegeoip';
 
 	/**
 	*The destruct function ensures the default database is set so there are no potential errors.
