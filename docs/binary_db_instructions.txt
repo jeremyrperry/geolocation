@@ -9,7 +9,6 @@ Binary Database setup
 
 If you choose to set up the binary database, congratulations!  You are using the most recommended IP lookup setup that has the best overall performance.  The module does a lot of the heavy lifting, but it still requires some setup on your part.  Don't worry though.  So long as you can download a couple of items, edit a couple of files, and can run a few command line functions, you'll be up and running in no time.
 
-
 1)Download either the Geolite or GeoIP version of the database from Maxmind and place it in the binary_db directory of the module*.  Here is the link to the Geolite download:  http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz
 2) Download/clone the Binary API from GitHub into the binary_db_api directory of the module*.  Please be aware that this API requires PHP 5.3 or greater.  Here is the link:  https://github.com/maxmind/GeoIP2-php
 3) Open composer.json in a text editor and add in the following:

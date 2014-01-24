@@ -10,12 +10,16 @@
 */
 
 abstract class geolocation_basic_abstract{
-	protected $mapquest_api;
+	protected $apiKeys;
 	protected $mdb;
 	//Adjust this boolean to use mongodb throughout the class if desired.  This will not affect the IP lookup if binary is selected.
 	public $useMongo = false;
 	//Adjust this variable to change the desired IP lookup source.
-	public $ipSource = 'freegeoip';
+	public $ipSource = 'binary';
+
+	function __construct(){
+		$this->apiKeys = json_decode(file_get_contents(str_replace('/inc', '/api_keys', dirname(__FILE__)).'/api_keys.json'), true);
+	}
 
 	/**
 	*The destruct function ensures the default database is set so there are no potential errors.
@@ -30,18 +34,18 @@ abstract class geolocation_basic_abstract{
 	*@param object $obj
 	*@return The remaining value and database query are outputted to array fromat.
 	*/
-	protected function apiLimitCheck($obj){
+	protected function apiLimitCheck($arr){
 		//Query values are declared.
-		$timestamp = strtotime('-'.$obj->limit_time_unit);
+		$timestamp = strtotime('-'.$arr['limit_time_unit']);
 		$queryArr = array(
-			':api_val_id'=>$obj->id,
+			':api_val_id'=>$arr['key'],
 			':timestamp'=>$timestamp,
 		);
 		//Query is ran, and values are outputted.
-		$query = "select sum(insert_count) as used from geolocation_api_track where api_val_id = '".$obj->id."' and timestamp >= '".$timestamp."'";
+		$query = "select sum(insert_count) as used from geolocation_api_track where api_key = '".$arr['key']."' and timestamp >= '".$timestamp."'";
 		$q = db_query($query);
 		$r = $q->fetchAssoc();
-		$output['value'] = $obj->limit_qty - $r['used'];
+		$output['value'] = $arr['limit_qty'] - $r['used'];
 		$output['query'] = $query;
 		return $output;
 	}
@@ -117,17 +121,6 @@ abstract class geolocation_basic_abstract{
 	}
 
 	/**
-	*The getApi function allows for an api value to be called from the database .
-	*@param string $name
-	*@return The database result object
-	*/
-	protected function getApi($name){
-		db_set_active('default');
-		$q = db_query("select * from geolocation_api_values where name = :name", array(':name'=>$name));
-		return $q->fetchObject();
-	}
-
-	/**
 	*The getAddressByGeo function is set up to make an API call the Google Maps Geocoder to get the full address of the inputted geocoordinates.  It outputs a much more simplified version of the original Google data.  Because of the query limitations imposed by Google, this function is used sparingly.
 	*@param array $request
 	*@param boolean $isJson default is true.
@@ -137,6 +130,9 @@ abstract class geolocation_basic_abstract{
 	protected function getAddressByGeo($request, $isJson = true){
 		//The geocoordinates are presumed to be in the correct comma delimited format, so the API query is ran immediately.
 		$url = 'http://maps.googleapis.com/maps/api/geocode/json?latlng='.$request['value'].'&sensor=false';
+		if($this->apiKeys['google']['key'] != ''){
+			$url .= '&key='.$this->apiKeys['google']['key'];
+		}
 		//The information returned is decoded from JSON for PHP to work with the data easiery.
 		$json = json_decode(file_get_contents($url), true);
 		//The address is obtained by exploding the formatted address field out into an array.
@@ -190,7 +186,7 @@ abstract class geolocation_basic_abstract{
 		}
 		//Mongodb sequence
 		if($this->useMongo){
-			$mGeo = $this->mongoDb('geolocation');
+			$mGeo = $this->mongoDb();
 			/*
 			//This is for running a query based on a 2d index.  Left as a reference.
 			$radius = 10/3959;
@@ -274,7 +270,7 @@ abstract class geolocation_basic_abstract{
 		$output = array();
 		//The mongodb database object is created if mongo is being used.
 		if($this->useMongo){
-			$mGeo = $this->mongoDb('geolocation');
+			$mGeo = $this->mongoDb();
 		}
 		switch($request['subtype']){
 			//Uses geocoordinates to determine dma information
@@ -450,6 +446,9 @@ abstract class geolocation_basic_abstract{
 		$address = urlencode($request['value']);
 		//API query is run
 		$url = 'http://maps.googleapis.com/maps/api/geocode/json?address='.$address.'&sensor=false';
+		if($this->apiKeys['google']['key'] != ''){
+			$url .= '&key='.$this->apiKeys['google']['key'];
+		}
 		//Data is decoded from JSON so PHP can work with it easier.
 		$json = json_decode(file_get_contents($url), true);
 		$address = explode(',', $json['results'][0]['formatted_address']);
@@ -492,14 +491,11 @@ abstract class geolocation_basic_abstract{
 	*/
 	protected function getGeoByAddressMq($request, $isJson = true){
 		$address = $request['value'];
-		if(!defined($this->mapquest_api)){
-			$this->mapquest_api = $this->getApi('mapquest');
-		}
 		$results = array();
 		//Counts out the number of addresses.
 		$count = count($address);
 		//Calls up the apiLimitCheck function to see how many API calls are remaining
-		$limit = $this->apiLimitCheck($this->mapquest_api);
+		$limit = $this->apiLimitCheck($this->apiKeys['mapquest']);
 		//The system will resolve as many addresses as possible, but will omit any values exceeding the API limitation.
 		if($limit['value'] < $count){
 			$output['msg'] = 'Notice: '.$limit.' of the '.$count.' records without lat/lon values were not updated due to API limitations.';
@@ -530,8 +526,8 @@ abstract class geolocation_basic_abstract{
 			for($m=$start; $m<$end; $m++){
 				$location .= '&location='.urlencode($address[$m]['address']);
 			}
-			//The URL is formulated. It utilizes an API key stored in the database.
-			$url = 'http://www.mapquestapi.com/geocoding/v1/batch?key='.$this->mapquest_api->api_key.'&callback=renderBatch'.$location;
+			//The URL is formulated with the API key added.
+			$url = 'http://www.mapquestapi.com/geocoding/v1/batch?key='.$this->apiKeys['mapquest']['key'].'&callback=renderBatch'.$location;
 			//The content retreived is processed as necessary for PHP to efficiently read the incomming JSON
 			$json = file_get_contents($url);
 			$json = str_replace('renderBatch(', '', $json);
@@ -601,7 +597,7 @@ abstract class geolocation_basic_abstract{
 				//A second boolean declaration is used in case the default setting was overridden in the corresponding $request value.
 				$this->useMongo = true;
 				//Database instance is declared, ipv4 converted, and query is run.
-				$mGeo = $this->mongoDb('geolocation');
+				$mGeo = $this->mongoDb();
 				$ipv4 = $this->getIpv4($ipAddress);
 				$find = array(
 					'start_ip_num'=>array(
@@ -775,7 +771,7 @@ abstract class geolocation_basic_abstract{
 		//Sequence for mongodb.
 		if($this->useMongo){
 			//Query is run.
-			$mGeo = $this->mongoDb('geolocation');
+			$mGeo = $this->mongoDb();
 			$q = $mGeo->geolocation_cities->find(array('postal_code'=>$postalCode))->limit(1);
 			$rowCount = $rq->count();
 			//Successful query.
@@ -853,7 +849,7 @@ abstract class geolocation_basic_abstract{
 		$qArray = array(':postal_code'=>$results['results']['postal_code'],':timestamp'=>$timestamp, ':forecast_length'=>$endString);
 		//Mongodb lookup/deletion sequence.
 		if($this->useMongo){
-			$mGeo = $this->mongoDb('geolocation');
+			$mGeo = $this->mongoDb();
 			$find = array(
 				'postal_code'=>floatval($results['results']['postal_code']),
 				'forecast_length'=>$endString,
@@ -1162,7 +1158,7 @@ abstract class geolocation_basic_abstract{
 			//If an update is indicated, the system will automatically update the internal database with the new information.
 			if($update){
 				if($this->useMongo){
-					$mGeo = $this->mongoDb('geolocation');
+					$mGeo = $this->mongoDb();
 					$mGeo->geolocation_cities->update(array('id'=>$row['id']), $insert);
 				}
 				else{
@@ -1189,7 +1185,7 @@ abstract class geolocation_basic_abstract{
 	*@param string $db, default is geolocation
 	*@return the database object for the specified collection.
 	*/
-	protected function mongoDb($db = 'geolocation'){
+	protected function mongoDb($db = 'lbs'){
 		if(!is_object($this->mdb)){
 			$this->mdb = new Mongo();
 		}

@@ -103,8 +103,8 @@ class geolocation_basic extends geolocation_basic_abstract{
 			'is_json'=>false,
 			'print_out'=>false,
 		);
-		//If a get or post is detected, the data is transferred over to the $request array.
-		if(isset($_REQUEST)){
+		//If use of the export page (API callup) is detected, the controls are adjusted accordingly to allow the print out.
+		if(strpos($_SERVER['REQUEST_URI'], 'geolocation/export') !== false){
 			$request = $_REQUEST;
 			$controls['is_json'] = true;
 			$controls['print_out'] = true;
@@ -125,6 +125,9 @@ class geolocation_basic extends geolocation_basic_abstract{
 			//The access control headers are modified to allow cross-domain requests.  This can be adjusted as needed to provide a tighter cross domain control. 
 			header("Access-Control-Allow-Origin: *");
 			header('Access-Control-Allow-Methods', 'GET POST');
+		}
+		if(!isset($request['type']) || $request['type'] == ''){
+			$request['type'] = 'ip_address';
 		}
 		$obj = '';
 		//Switch statement performed for type

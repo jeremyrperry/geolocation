@@ -10,15 +10,15 @@ For the geolocation portion, it has a number of features that can locate a user'
 
 For the Weather portion, this module is set up to make an API callout to the National Weather Service REST API, which is public information and can be accessed without any restrictions.  A user's weather information can be looked up by lat/lon, postal code, or IP address.  I also took the time to go through the very confusing NWS API to reorganize the data into a more useable format that isn't as confusing to parse through.  Because the NWS API can be sluggish at times, the module is designed to cache the weather data and use it for up to three hours.  The time can be manually adjusted in the code.
 
-The group of geolocation and weather functions can either be called up via their REST API links or by invoking the PHP code locally.  Please read api_documentation.txt for specific examples.
+The group of geolocation and weather functions can either be called up via their REST API links or by invoking the PHP code locally.  Please read docs/api_documentation.txt for specific examples.
 
-This module supports using Mongodb as an optional data source.  While basic documentation and a dump of the data structure has been provided, using Mongodb as the module's data source will require setup by a knowledgeable developer.  The use of Drupal's mongodb module will also be required.  Further documentation can be found in mongodb/mongodb_instructions.txt.
+This module supports using Mongodb as an optional data source.  While basic documentation and a dump of the data structure has been provided, using Mongodb as the module's data source will require setup by a knowledgeable developer.  The use of Drupal's mongodb module will also be required.  Further documentation can be found in docs/mongodb_instructions.txt.
 
 This module uses Object Oriented Programming wherever possible and requires the Module Object Oriented Programming API (moopapi) as a dependency.  Code-level documentation is complete as of 1/16/2014.
 
 Please be aware that while this module should for the most part work out of the box, it is still under active development, should only be installed by a knowledgeable developer, and should always go through a thorough testing/QA cycle before being put on a production site.  It may require minor code modifications to work properly with your Drupal setup.
 
-While the module will work without any Maxmind database, using either one is highly recommended to keep from hitting API limitations from Freegeoip.net and particularly Google Maps.  The binary format is the most recommended as it gives the best overall performance and takes up less disk space than the CSV format.  Regardless of the format chosen, you will need to download the databases directly from Maxmind as they are too big to include as a part of the module.  If the CSV version is chosen, be aware that some of the column names in the modules's table/collection structure are different from the provided CSV tables, so please plan accordingly. The CSV data can be imported into either a traditional Drupal-supported RDBMS (i.e. MySQL, Postgres, SQL Server, etc.) or a Mongodb instance.  The Maxmind Geolite links are below.
+While the module will work without any Maxmind database, using either one is highly recommended to keep from hitting API limitations from Freegeoip.net and particularly Google Maps.  Please be aware that the module's DMA, City Postal By Geo, and Postal Code lookup functions utilize the data from the CSV Database whenever possible.  Because Maxmind's binary database API doesn't support any form of lookup outside of an IP address, setting up the CSV city data is still recommended even when using the binary database to avoid using the Google Maps API.  Regardless of the format chosen, you will need to download the databases directly from Maxmind as they are too big to include as a part of the module.  If the CSV version is chosen, be aware that some of the column names in the modules's table/collection structure are different from the provided CSV tables, so please plan accordingly. The CSV data can be imported into either a traditional Drupal-supported RDBMS (i.e. MySQL, Postgres, SQL Server, etc.) or a Mongodb instance.  The Maxmind Geolite links are below.
 
 CSV:
 
@@ -30,9 +30,9 @@ Binary:
 Geolite Binary Database Page - http://dev.maxmind.com/geoip/geoip2/geolite2/
 Geolite Binary Database Download - http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz
 
-Further RDBMS setup instructions can be found in rdbms_geolocation_instructions.txt.
+Further RDBMS setup instructions can be found in docs/rdbms_geolocation_instructions.txt.
 
-If you are using the binary database, please see binary_db_instructions.txt for further setup instructions.
+If you are using the binary database, please see docs/binary_db_instructions.txt for further setup instructions.
 
 Maxmind's full subscription GeoIP databases can be downloaded from the appropriate section of the site.
 
