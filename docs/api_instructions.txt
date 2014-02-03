@@ -99,7 +99,7 @@ Optional Input Values:
 
 Example Get URL (using an IP address not the end user’s):  
 
-http://yoursite.com/geolocation/export?type=value=24.19.187.86
+http://yoursite.com/geolocation/export?type=ip_address&value=24.19.187.86
 
 Example Direct PHP Callup (using an IP address not the end user’s):
 
