@@ -382,7 +382,7 @@ $values = array(
 );
 $obj = new geolocation_basic;
 $weather = $obj->export($weather);
-print_r($location);
+print_r($weather);
 
 Because of the large dataset that can be returned, an example JSON and PHP array return is not included.  The possible result variables are below.  The start_valid_time and end_valid_time variables are time time periods the weather data is valid for in W3C format.
 
